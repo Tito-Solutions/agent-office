@@ -27,6 +27,8 @@ import { landedWork, landedWorkers, type Landed } from './leave-on-merge.js';
 import type { Ledger } from './usage.js';
 import type { Capacity } from './machine.js';
 import { officePrompt, type PromptSource } from './prompts.js';
+import { deskPodLabel, podOfTask, seatOrder } from './pod-desks.js';
+import type { Pod } from '../shared/pods.js';
 
 type ToastLevel = 'info' | 'warn' | 'error';
 
@@ -70,6 +72,8 @@ export interface FloorContext {
   lent(floor: Floor): boolean;
   /** Whether the building's map locks up workers sent home (see MapPlan.sendHome), instead of letting them go. */
   locksUp(): boolean;
+  /** The delivery pods, the same on every floor (see server/pods.ts): whose desks and tasks are whose. */
+  pods?(): readonly Pod[];
 }
 
 /** The open pull request on a floor's board whose head is `branch`. */
@@ -198,6 +202,7 @@ export class Floor {
         data: (workerId, data, viewers) => ctx.termData(workerId, data, viewers),
         screen: (workerId, frame) => ctx.emit(this, { t: 'screen', workerId, ...frame }, true),
         toast: (text, level) => ctx.toast(this, text, level),
+        deskPod: (deskId) => deskPodLabel(this.plan.state(), ctx.pods?.() ?? [], deskId),
       },
       ctx.ledger,
       ctx.capacity,
@@ -244,6 +249,11 @@ export class Floor {
         ctx.emit(this, { t: 'gong', why: 'queue' });
       },
       worktreeNote: () => officePrompt(ctx.prompts, 'queue.worktree'),
+      // A pod's task sits down at one of the pod's desks when one is free, and no task takes another pod's while a desk that's no pod's is free.
+      prefer: (task) => {
+        const pods = ctx.pods?.() ?? [];
+        return seatOrder(podOfTask(task, pods, this.github.issues.items), this.plan.state(), pods);
+      },
     });
 
     // Meetings seat their own workers round the meeting room's table and run them round by round.
