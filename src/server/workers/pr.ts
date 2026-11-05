@@ -8,6 +8,7 @@ import { isBusy } from '../../shared/status.js';
 import { gh } from '../github.js';
 import type { GhAs } from '../signins.js';
 import { Worktrees } from '../worktrees.js';
+import { aiUseBlock, withAiUse } from './ai-use.js';
 import { run } from './process.js';
 import type { OpenedPr, Worker, WorkerContext } from './types.js';
 import { truncate } from './util.js';
@@ -77,7 +78,7 @@ export function withRelated(body: string, block: string): string {
  * `other`, it's for one of the other repositories of a worker across repositories: the issue is its
  * own floor's (`home`), so this one only mentions it.
  */
-function draftPr(info: WorkerInfo, commits: string[], by: string, other?: { home?: string }): { title: string; body: string } {
+function draftPr(info: WorkerInfo, commits: string[], by: string, aiUse: string, other?: { home?: string }): { title: string; body: string } {
   const task = (info.prompt ?? '').replace(/\r\n?/g, '\n').trim();
   const firstLine = task.split('\n').map((l) => l.trim()).find(Boolean) ?? '';
   // The issues board hands work over as: Work on GitHub issue #12: "Title".
@@ -89,6 +90,7 @@ function draftPr(info: WorkerInfo, commits: string[], by: string, other?: { home
   parts.push(`## Commits\n\n${commits.map((c) => `- \`${c.slice(0, c.indexOf(' '))}\` ${c.slice(c.indexOf(' ') + 1)}`).join('\n')}`);
   if (closes && !other) parts.push(`Closes #${closes}`);
   else if (closes && other?.home) parts.push(`Part of ${other.home}#${closes}`);
+  if (aiUse) parts.push(aiUse);
   parts.push(`_Opened from Agent Office by ${by} · ${info.name} at ${DESK_BY_ID.get(info.deskId)?.label ?? info.deskId}_`);
   return { title, body: parts.join('\n\n') };
 }
@@ -121,6 +123,20 @@ export class WorkerPrs {
     this.ctx.persist();
     this.ctx.emit(w);
     this.ctx.events.toast(`${info.name} opened PR #${pr.number}${other ? ` in ${other.name}` : ''}`, 'info');
+    void this.addAiUse(info, pr.url);
+  }
+
+  /** Adds the AI use section to a pull request a worker opened itself, unless it has one. Best effort: the office may not be allowed to edit it. */
+  private async addAiUse(info: WorkerInfo, url: string): Promise<void> {
+    const block = aiUseBlock(info, this.ctx.prompts);
+    if (!block) return;
+    try {
+      const body = await gh(['pr', 'view', url, '--json', 'body', '--jq', '.body'], this.ctx.dir, 30_000);
+      const next = withAiUse(body, block);
+      if (next !== body) await gh(['pr', 'edit', url, '--body', next], this.ctx.dir, 60_000);
+    } catch (err) {
+      console.warn(`[pr] couldn't add the AI use section to ${url}: ${(err as Error).message}`);
+    }
   }
 
   /**
@@ -176,7 +192,7 @@ export class WorkerPrs {
       }
       await run('git', ['push', '-u', 'origin', branch], cwd, 90_000, as?.env);
       const base = await this.pushedBranch([wt.from, this.ctx.trees.currentBranch()], branch);
-      const { title, body } = draftPr(info, commits, by);
+      const { title, body } = draftPr(info, commits, by, aiUseBlock(info, this.ctx.prompts));
       const { number, url } = await createPr(branch, base, title, body, cwd, as);
       info.pr = { number, url };
       this.ctx.persist();
@@ -229,7 +245,7 @@ export class WorkerPrs {
           }
           await run('git', ['push', '-u', 'origin', p.branch], cwd, 90_000, as?.env);
           const base = await this.pushedBranch([p.from, new Worktrees(p.dir).currentBranch()], p.branch, p.dir);
-          const { title, body } = draftPr(info, commits, by, p.own ? undefined : { home });
+          const { title, body } = draftPr(info, commits, by, aiUseBlock(info, this.ctx.prompts), p.own ? undefined : { home });
           const pr = await createPr(p.branch, base, title, body, cwd, as);
           p.set(pr);
           this.ctx.persist();
