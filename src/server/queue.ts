@@ -38,6 +38,8 @@ export interface QueueEvents {
   emptied(): void;
   /** What's added after a task that runs in its own worktree ('queue.worktree' in shared/prompts.ts); empty for nothing. */
   worktreeNote?(): string;
+  /** The desks a task would rather sit at (its pod's, see pod-desks.ts), best first; any free seat when none of them is. */
+  prefer?(task: QueueTask): string[];
 }
 
 export const DEFAULT_MAX_WORKERS = 3;
@@ -279,8 +281,10 @@ export class TaskQueue {
     return this.tasks.filter((t) => t.status === 'running').length;
   }
 
-  /** A free desk (in the back office too, as far as it's built), else a free bean bag. */
-  private freeDesk(): string | undefined {
+  /** A free desk the task would rather have, else a free desk (in the back office too, as far as it's built), else a free bean bag. */
+  private freeDesk(task?: QueueTask): string | undefined {
+    const preferred = task ? this.events.prefer?.(task).find((id) => !this.workers.deskOccupied(id)) : undefined;
+    if (preferred) return preferred;
     return nextFreeSeat((id) => this.workers.deskOccupied(id), this.workers.wing?.() ?? 0)?.id;
   }
 
@@ -322,7 +326,7 @@ export class TaskQueue {
       // workers going home makes room. Over the limit (it was just lowered), it waits for people to send some home.
       const room = this.events.room?.() ?? Infinity;
       if (room < 0) break;
-      const free = room > 0 ? this.freeDesk() : undefined;
+      const free = room > 0 ? this.freeDesk(t) : undefined;
       if (!free && !this.recyclable()) break;
       // Its worktree starts from what's on GitHub now, PRs merged since included: fetch that first,
       // and come back to seat it once it's in.

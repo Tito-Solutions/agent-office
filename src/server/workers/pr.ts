@@ -51,6 +51,19 @@ async function createPr(branch: string, base: string | undefined, title: string,
   return { number, url };
 }
 
+/**
+ * Labels a pull request opened from a pod's desk with the pod (see pod-desks.ts). Best effort, after
+ * it's open: a repository without that label keeps the pull request, just unlabelled.
+ */
+async function labelPr(pr: { number: number }, label: string | undefined, cwd: string, as?: GhAs): Promise<void> {
+  if (!label) return;
+  try {
+    await gh(['pr', 'edit', String(pr.number), '--add-label', label], cwd, 30_000, as?.env);
+  } catch {
+    // no such label on this repository
+  }
+}
+
 /** owner/name#12 for a pull request on GitHub (which links it with its title), else its URL. */
 function prRef(url: string): string {
   const m = /github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/.exec(url);
@@ -194,6 +207,7 @@ export class WorkerPrs {
       const base = await this.pushedBranch([wt.from, this.ctx.trees.currentBranch()], branch);
       const { title, body } = draftPr(info, commits, by, aiUseBlock(info, this.ctx.prompts));
       const { number, url } = await createPr(branch, base, title, body, cwd, as);
+      await labelPr({ number }, this.ctx.events.deskPod?.(info.deskId), cwd, as);
       info.pr = { number, url };
       this.ctx.persist();
       return { prs: [{ number, url, existed: false, dirty }], failed: [] };
@@ -247,6 +261,7 @@ export class WorkerPrs {
           const base = await this.pushedBranch([p.from, new Worktrees(p.dir).currentBranch()], p.branch, p.dir);
           const { title, body } = draftPr(info, commits, by, aiUseBlock(info, this.ctx.prompts), p.own ? undefined : { home });
           const pr = await createPr(p.branch, base, title, body, cwd, as);
+          await labelPr(pr, this.ctx.events.deskPod?.(info.deskId), cwd, as);
           p.set(pr);
           this.ctx.persist();
           prs.push({ repo: p.name, ...pr, existed: false, dirty, cwd });

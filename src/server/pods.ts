@@ -25,6 +25,11 @@ export class PodsStore {
     return structuredClone(this.saved);
   }
 
+  /** The pods as they are, not to be changed: for reading often (which pod a desk or a task is). */
+  list(): readonly Pod[] {
+    return this.saved.pods;
+  }
+
   pod(id: string): Pod | undefined {
     return this.saved.pods.find((p) => p.id === id);
   }
