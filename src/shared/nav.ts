@@ -4,6 +4,7 @@
 // An office floor built out into the back office (see WING) has more of it to get round: the office's
 // helpers take how many rows it's built out (`wing`), and each level gets a grid of its own.
 
+import { POD_BOARD } from './pods.js';
 import { BALCONY, BALCONY_DOOR, BEANBAGS, BOOKSHELF, CABINET, DESK_SIZE, ELEVATOR, ELEVATOR_FRONT, EXIT_DOOR, EXIT_STAIRS, FLOOR, GONG, JUKEBOX, KIOSK, LADDER, LOFT, MEETING_ROOM, MEETING_SEATS, MEETING_TABLE, PARACHUTE, POLE, POLES, ROAD, STAIRS, STATIONS, WHITEBOARD, WING, builtDesks, plantsAt, wingLevel, wingMinZ, type DeskDef } from './layout.js';
 
 
@@ -66,6 +67,8 @@ function obstacles(wing: number): Obstacles {
   rects.push([GONG.x - GONG.width / 2 - 0.12, GONG.x + GONG.width / 2 + 0.3, GONG.z - 0.3, GONG.z + 0.3]);
   // The whiteboard on its wheels, as features/whiteboard/world.ts puts it.
   rects.push([WHITEBOARD.x - WHITEBOARD.width / 2 - 0.2, WHITEBOARD.x + WHITEBOARD.width / 2 + 0.2, WHITEBOARD.z - 0.48, WHITEBOARD.z + 0.48]);
+  // The Pod board on its legs, as features/pods/world.ts puts it.
+  rects.push([POD_BOARD.x - POD_BOARD.width / 2 - 0.2, POD_BOARD.x + POD_BOARD.width / 2 + 0.2, POD_BOARD.z - 0.48, POD_BOARD.z + 0.48]);
   // The jukebox, against the east wall.
   rects.push([JUKEBOX.x - JUKEBOX.depth / 2 - 0.05, FLOOR.maxX, JUKEBOX.z - JUKEBOX.width / 2 - 0.05, JUKEBOX.z + JUKEBOX.width / 2 + 0.05]);
   // The arcade cabinet next to it, as features/cabinet/world.ts puts it (its control panel sticks out a little).
