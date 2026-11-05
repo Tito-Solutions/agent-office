@@ -8,11 +8,12 @@ import { whereabouts } from './whereabouts';
 let peopleKey = '';
 
 /** The people list in the sidebar. Click yourself to change your character, or anyone else to walk over to them. */
-export function renderPeople(voice: Voice, onEditProfile: () => void, onWalkTo: (id: string) => void, force = true) {
+export function renderPeople(voice: Voice, onEditProfile: () => void, onWalkTo: (id: string) => void, force = true, tagFor?: (name: string) => string | undefined) {
   const peers = [...store.peers.values()].sort((a, b) => (a.id === store.you ? -1 : b.id === store.you ? 1 : a.name.localeCompare(b.name)));
   // What each of them is up to changes as they walk about (onto the balcony, up the stairs).
   const doing = peers.map((p) => (p.id === store.you ? undefined : whereabouts(p, store.carOf(p.id))));
-  const key = peers.map((p, i) => `${p.id}|${doing[i] ?? ''}`).join('\n');
+  const tags = peers.map((p) => tagFor?.(p.name));
+  const key = peers.map((p, i) => `${p.id}|${doing[i] ?? ''}|${tags[i] ?? ''}`).join('\n');
   if (!force && key === peopleKey) return;
   peopleKey = key;
   const ul = $('people');
@@ -25,7 +26,7 @@ export function renderPeople(voice: Voice, onEditProfile: () => void, onWalkTo: 
       'li',
       { 'data-peer': p.id, class: p.lite && !you ? undefined : 'walk', title: you ? 'Change your character' : p.lite ? `${p.name} is on the 2D view` : `${store.onMyFloor(p) ? 'Walk over to' : 'Take the elevator to'} ${p.name}${sub ? ` (${sub})` : ''}` },
       h('span.dot', { style: `background:${p.color}` }),
-      h('span.name', {}, p.name, sub ? h('span.sub', {}, sub) : null),
+      h('span.name', {}, p.name, tags[i] ? h('span.sub.pod-tag', {}, `👥 ${tags[i]}`) : null, sub ? h('span.sub', {}, sub) : null),
       p.account ? h('span.acct', { title: `Signed in with ${you ? 'your' : 'their'} own account` }, '✓') : null,
       you ? h('span.you', {}, '(you)') : null,
       // Somewhere else in the building: which floor.

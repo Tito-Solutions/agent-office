@@ -41,8 +41,14 @@ export interface RemotePeer {
   grip: Grip | null;
 }
 
+/** What goes after someone's name on their tag and in the people list (their pod, say), and when that changes. */
+export interface PeerTags {
+  tagFor(name: string): string | undefined;
+  onTags(fn: () => void): void;
+}
+
 /** Registers what follows the people in the office (store 'peers' and 'cars'), their ticks, and chat and peer.act. */
-export function installPeers(ctx: Ctx, core: CoreState, parts: Pick<Parts, 'puff' | 'worlds' | 'cars' | 'walking' | 'talk' | 'hud'>) {
+export function installPeers(ctx: Ctx, core: CoreState, parts: Pick<Parts, 'puff' | 'worlds' | 'cars' | 'walking' | 'talk' | 'hud'>, tags?: PeerTags) {
   const { scene, voice, sound, player, office } = ctx;
   const { plan, inOffice } = parts.worlds;
   const remotes = new Map<string, RemotePeer>();
@@ -64,10 +70,11 @@ export function installPeers(ctx: Ctx, core: CoreState, parts: Pick<Parts, 'puff
         r = { person, target: new THREE.Vector3(peer.x, peer.y, peer.z), rotY: peer.rotY, moving: false, label: '', look: { ...peer.look }, stepT: 0, speed: 0, grip: null };
         remotes.set(id, r);
       }
-      const label = `${peer.name}|${peer.voice ? (peer.muted ? 'm' : 'v') : '-'}|${peer.color}`;
+      const tag = tags?.tagFor(peer.name);
+      const label = `${peer.name}|${peer.voice ? (peer.muted ? 'm' : 'v') : '-'}|${peer.color}|${tag ?? ''}`;
       if (label !== r.label) {
         r.label = label;
-        r.person.setLabel(peer.name, peer.voice ? peer.muted : null);
+        r.person.setLabel(tag ? `${peer.name} · ${tag}` : peer.name, peer.voice ? peer.muted : null);
         r.person.setColor(peer.color);
         noOutline(r.person.root);
       }
@@ -92,10 +99,12 @@ export function installPeers(ctx: Ctx, core: CoreState, parts: Pick<Parts, 'puff
         remotes.delete(id);
       }
     }
-    renderPeople(voice, editProfile, walkTo);
+    renderPeople(voice, editProfile, walkTo, true, tags?.tagFor);
     parts.talk.refreshShares();
   }
   store.on('peers', syncPeers);
+  // Someone's pod changed on the roster: their tag says so.
+  tags?.onTags(syncPeers);
   // Into a car or out of one: sitting in it, or back on their feet.
   store.on('cars', syncPeers);
 
@@ -159,7 +168,7 @@ export function installPeers(ctx: Ctx, core: CoreState, parts: Pick<Parts, 'puff
         const p = store.peers.get(id);
         if (p) r.person.setDoing(whereabouts(p, store.carOf(id), plan()));
       }
-      renderPeople(voice, editProfile, walkTo, false);
+      renderPeople(voice, editProfile, walkTo, false, tags?.tagFor);
       updateSpeaking(voice);
       // People on other floors can't be heard here (their voice connection stays up for when you meet).
       for (const p of store.peers.values()) if (p.id !== store.you && !store.onMyFloor(p)) voice.setVolume(p.id, 0);

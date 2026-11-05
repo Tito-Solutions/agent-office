@@ -35,6 +35,7 @@ import type { installJukebox } from '../features/jukebox';
 import type { installMeeting } from '../features/meeting';
 import type { installNeedsYou } from '../features/needsyou';
 import type { installPeers } from '../features/peers';
+import type { installPods } from '../features/pods';
 import type { installRooftop } from '../features/rooftop';
 import type { installSeating } from '../features/seating';
 import type { installSmoke } from '../features/smoke';
@@ -107,6 +108,7 @@ export interface Parts {
   hanging: Made<typeof installHanging>;
   climbing: Made<typeof installClimbing>;
   cars: Made<typeof installCars>;
+  pods: Made<typeof installPods>;
   peers: Made<typeof installPeers>;
   walking: Made<typeof installWalking>;
   views: Made<typeof installWorkerViews>;

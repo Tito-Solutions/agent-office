@@ -11,6 +11,7 @@ import { jukebox } from '../../features/jukebox/world';
 import { bookshelf } from '../../features/bookshelf/world';
 import { cabinet } from '../../features/cabinet/world';
 import { whiteboard } from '../../features/whiteboard/world';
+import { podBoard } from '../../features/pods/world';
 import { green, tee } from '../../features/golf/world';
 import { stack } from '../stack';
 import { tower } from '../tower';
@@ -71,6 +72,7 @@ function floorPlan() {
     gong,
     hoop,
     whiteboard,
+    podBoard,
     clearOfStairs,
   ] as const;
 }
