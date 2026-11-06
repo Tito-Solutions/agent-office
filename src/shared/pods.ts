@@ -125,6 +125,12 @@ export function podOfLabels(labels: readonly { name: string }[], pods: readonly 
   return pods.find((p) => labels.some((l) => sameName(l.name, p.name)));
 }
 
+/** The pod label of issue `n` among `issues`, spelled as the issue has it: what a pull request that closes it is labelled with. */
+export function podLabelOfIssue(issues: readonly { number: number; labels: readonly { name: string }[] }[], n: number, pods: readonly Pod[]): string | undefined {
+  const issue = issues.find((i) => i.number === n);
+  return issue?.labels.find((l) => pods.some((p) => sameName(p.name, l.name)))?.name;
+}
+
 /** The Delivery Flow stage an issue or pull request is labelled with. */
 export function stageOfLabels(labels: readonly { name: string }[]): Stage | undefined {
   return STAGES.find((s) => labels.some((l) => sameName(l.name, s)));

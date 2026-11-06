@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { PodsStore } from '../src/server/pods.js';
 import { SIGN_COLORS } from '../src/shared/floorplan.js';
-import { DEFAULT_POD_NAMES, cleanPods, defaultPods, podOfLabels, stageOfLabels } from '../src/shared/pods.js';
+import { DEFAULT_POD_NAMES, cleanPods, defaultPods, podLabelOfIssue, podOfLabels, stageOfLabels } from '../src/shared/pods.js';
 
 function withDir(fn: (dir: string) => void) {
   const dir = mkdtempSync(path.join(tmpdir(), 'agent-office-pods-'));
@@ -106,4 +106,16 @@ test('labels name the pod and the stage', () => {
   assert.equal(podOfLabels([{ name: 'bug' }], pods), undefined);
   assert.equal(stageOfLabels([{ name: 'Build' }, { name: 'Pod Thai' }]), 'build');
   assert.equal(stageOfLabels([{ name: 'bug' }]), undefined);
+});
+
+test('a pull request closing an issue takes the issue’s pod label', () => {
+  const pods = defaultPods().pods;
+  const issues = [
+    { number: 12, labels: [{ name: 'plan' }, { name: 'pod thai' }] },
+    { number: 13, labels: [{ name: 'bug' }] },
+  ];
+  // The label as the repository spells it, which is what gh adds.
+  assert.equal(podLabelOfIssue(issues, 12, pods), 'pod thai');
+  assert.equal(podLabelOfIssue(issues, 13, pods), undefined);
+  assert.equal(podLabelOfIssue(issues, 99, pods), undefined);
 });

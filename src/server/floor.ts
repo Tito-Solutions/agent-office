@@ -27,6 +27,7 @@ import { landedWork, landedWorkers, type Landed } from './leave-on-merge.js';
 import type { Ledger } from './usage.js';
 import type { Capacity } from './machine.js';
 import { officePrompt, type PromptSource } from './prompts.js';
+import { podLabelOfIssue, type Pod } from '../shared/pods.js';
 
 type ToastLevel = 'info' | 'warn' | 'error';
 
@@ -70,6 +71,8 @@ export interface FloorContext {
   lent(floor: Floor): boolean;
   /** Whether the building's map locks up workers sent home (see MapPlan.sendHome), instead of letting them go. */
   locksUp(): boolean;
+  /** The delivery pods (see server/pods.ts): a pull request closing a pod's issue gets the pod's label. */
+  pods?(): readonly Pod[];
 }
 
 /** The open pull request on a floor's board whose head is `branch`. */
@@ -198,6 +201,7 @@ export class Floor {
         data: (workerId, data, viewers) => ctx.termData(workerId, data, viewers),
         screen: (workerId, frame) => ctx.emit(this, { t: 'screen', workerId, ...frame }, true),
         toast: (text, level) => ctx.toast(this, text, level),
+        issuePod: (n) => podLabelOfIssue(this.github.issues.items, n, ctx.pods?.() ?? []),
       },
       ctx.ledger,
       ctx.capacity,
