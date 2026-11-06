@@ -1,5 +1,5 @@
-// What a pod has on this floor: its issues by stage, its pull requests, the workers at its desks.
-import { podDesks, podOfLabels, stageOfLabels, STAGES, type Pod, type Stage } from '../../../shared/pods';
+// What a pod has on this floor: its issues by stage and its pull requests, by its labels.
+import { podOfLabels, stageOfLabels, STAGES, type Pod, type Stage } from '../../../shared/pods';
 import { store } from '../../state';
 
 /** A pod's open issues on this floor by stage, its open pull requests, and those waiting on a review. */
@@ -13,12 +13,6 @@ export function podWork(pod: Pod): { stages: Record<Stage, number>; prs: number;
   }
   const open = store.pulls.items.filter((p) => p.state === 'OPEN' && podOfLabels(p.labels, pods) === pod);
   return { stages, prs: open.length, inReview: open.filter((p) => !p.isDraft && p.reviewDecision !== 'APPROVED').length };
-}
-
-/** The workers at a pod's desks on this floor. */
-export function podWorkers(pod: Pod) {
-  const desks = new Set(podDesks(store.floorPlan, pod));
-  return { desks, workers: [...store.workers.values()].filter((w) => desks.has(w.deskId)) };
 }
 
 /** "PA Rhona · Dev JP, Irefrans". */

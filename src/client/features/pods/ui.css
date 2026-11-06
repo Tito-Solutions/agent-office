@@ -9,31 +9,17 @@
 .pod-card h3, .roster-org h3 { margin: 0; font-size: 17px; font-weight: 900; flex: 1; }
 .pod-swatch { width: 14px; height: 14px; border-radius: 50%; background: var(--pod); border: 2px solid var(--ink); flex: none; }
 .pod-limit { font-weight: 900; font-size: 13px; padding: 2px 10px; border-radius: 999px; background: var(--paper-2); }
-.pod-limit.full { background: var(--bad); color: #fff; }
 .pod-people, .pod-work { margin: 6px 0 0; font-size: 13px; font-weight: 700; }
 .pod-work { color: var(--muted); }
-.pod-account { color: var(--muted); }
 
-.pod-features { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.pod-features li { border: 2px solid var(--paper-2); border-radius: 12px; padding: 8px 10px; }
-.pod-feature-main { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.pod-jira, .pod-override { font-size: 12px; font-weight: 800; padding: 1px 8px; border-radius: 999px; background: var(--paper-2); }
-.pod-override { background: #ffd166; }
-.pod-feature-meta { font-size: 12px; color: var(--muted); font-weight: 700; margin-top: 2px; }
-.pod-recommit { text-decoration: underline dotted; cursor: help; }
-.pod-late { color: var(--bad); font-weight: 900; }
-.pod-feature-actions, .pod-actions, .pod-form-actions, .roster-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
-.pod-form-actions { justify-content: flex-end; }
+.roster-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .roster-actions .grow { flex: 1; }
 
-.pod-form { margin-top: 10px; padding: 10px; border-radius: 12px; background: var(--paper-2); display: flex; flex-direction: column; gap: 8px; }
 .pod-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .pod-row > .pod-field { flex: 1; min-width: 160px; }
 .modal label.pod-field { display: flex; flex-direction: column; gap: 4px; margin: 0; }
 .pod-field > span { font-size: 12px; font-weight: 800; color: var(--muted); }
-.pods-window input[type=date], .pods-window input[type=number], .pods-window select { font: inherit; font-size: 15px; border: 3px solid var(--ink); border-radius: 12px; padding: 8px 10px; background: #fff; }
-.pod-desks, .roster-floors { display: flex; flex-wrap: wrap; gap: 6px 14px; }
-.modal label.pod-desk { font-weight: 700; font-size: 13px; margin: 0; }
+.pods-window input[type=number], .pods-window select { font: inherit; font-size: 15px; border: 3px solid var(--ink); border-radius: 12px; padding: 8px 10px; background: #fff; }
 
 .roster { display: flex; flex-direction: column; gap: 12px; }
 .roster-pod { display: flex; flex-direction: column; gap: 10px; }

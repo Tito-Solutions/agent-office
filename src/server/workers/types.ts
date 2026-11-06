@@ -110,8 +110,6 @@ export interface WorkerEvents {
   data(workerId: string, data: string, viewers: string[]): void;
   screen(workerId: string, frame: { cols: number; rows: number; lines: Record<number, Run[]>; full: boolean; cursor: [number, number] }): void;
   toast(text: string, level: 'info' | 'warn' | 'error'): void;
-  /** The pod whose desk this is (see pod-desks.ts): a pull request opened from it gets the pod's label. */
-  deskPod?(deskId: string): string | undefined;
 }
 
 /**

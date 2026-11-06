@@ -6,25 +6,19 @@ import type { Collider, Interactable } from '../../world/types';
 import type { Fixture } from '../../world/office/fixture';
 
 // The Pod board: a board on legs out on the open floor, the same on both faces, with a card for each
-// delivery pod: its active features against its limit, who's in it, its issues by stage, its pull
-// requests and the workers at its desks. index.ts says what's on it; this draws it.
+// delivery pod: who's in it, its issues by stage and its pull requests. index.ts says what's on it;
+// this draws it.
 
 /** What a pod's card on the board shows. */
 export interface PodCard {
   name: string;
   color: string;
-  features: number;
   limit: number;
-  /** Features past their due date. */
-  late: number;
   /** "PA Rhona · Dev JP". */
   people: string;
   stages: Record<Stage, number>;
   prs: number;
   inReview: number;
-  desks: number;
-  workers: number;
-  needsInput: boolean;
 }
 
 const FONT = 'Nunito, ui-rounded, system-ui, sans-serif';
@@ -124,13 +118,7 @@ export function drawPodBoard(cards: readonly PodCard[], floorName: string | unde
     g.fillStyle = signInk(card.color);
     g.textAlign = 'left';
     g.font = `900 ${Math.round(44 * s)}px ${FONT}`;
-    g.fillText(fit(g, card.name, cw - 40 - (card.needsInput ? 40 : 0)), x + 20, y + band / 2 + 2);
-    if (card.needsInput) {
-      g.fillStyle = '#ef476f';
-      g.beginPath();
-      g.arc(x + cw - 30, y + band / 2, 13 * s, 0, Math.PI * 2);
-      g.fill();
-    }
+    g.fillText(fit(g, card.name, cw - 40), x + 20, y + band / 2 + 2);
 
     let ly = y + band + 44 * s;
     const line = (text: string, color = INK, weight = 800, size = 32) => {
@@ -139,15 +127,10 @@ export function drawPodBoard(cards: readonly PodCard[], floorName: string | unde
       g.fillText(fit(g, text, cw - 40), x + 20, ly);
       ly += (size + 18) * s;
     };
-    // Features against the limit: a dot each, filled for the ones it carries.
-    const full = card.features >= card.limit;
-    const dots = Array.from({ length: Math.max(card.limit, card.features) }, (_, k) => (k < card.features ? '●' : '○')).join('');
-    line(`${dots}  ${card.features}/${card.limit}${full ? ' · full' : ' features'}`, full ? '#d62828' : INK, 900, 36);
-    if (card.late) line(`⏰ ${card.late} past due`, '#d62828', 800, 30);
+    line(`Limit ${card.limit} active feature${card.limit === 1 ? '' : 's'}`, INK, 900, 32);
     line(card.people || 'No members yet', card.people ? INK : MUTED, 700, 28);
     line(STAGES.map((st) => `${STAGE_SHORT[st]} ${card.stages[st]}`).join(' · '), MUTED, 700, 24);
     line(`🔀 ${card.prs} PR${card.prs === 1 ? '' : 's'}${card.inReview ? ` · ${card.inReview} in review` : ''}`, INK, 700, 28);
-    line(card.desks ? `🤖 ${card.workers} at ${card.desks} desk${card.desks === 1 ? '' : 's'}` : '🪑 No desks here yet', card.desks ? INK : MUTED, 700, 28);
   });
   tex.needsUpdate = true;
 }
