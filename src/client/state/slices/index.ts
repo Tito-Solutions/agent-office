@@ -17,6 +17,7 @@ import { decor } from './decor';
 import { dog } from './dog';
 import { floorPlan } from './floor-plan';
 import { jail } from './jail';
+import { jira } from './jira';
 import { jukebox } from './jukebox';
 import { pods } from './pods';
 import { leaveOnMerge } from './leave-on-merge';
@@ -63,4 +64,5 @@ export const SLICES: readonly Slice[] = [
   accounts,
   signins,
   pods,
+  jira,
 ];

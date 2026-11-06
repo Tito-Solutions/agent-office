@@ -23,6 +23,7 @@ import type { Themes } from '../theme.js';
 import type { Maps } from '../maps.js';
 import type { OfficePrompts } from '../prompts.js';
 import type { PodsStore } from '../pods.js';
+import type { JiraLinks } from '../jira/links.js';
 import type { LeaveOnMerge } from '../leave-on-merge.js';
 import type { ChatLog } from '../history.js';
 import type { Arcade, HighScores } from '../cabinet.js';
@@ -66,6 +67,8 @@ export interface BuildingServices {
   pods: PodsStore;
   ledger: Ledger;
   signins: SignIns;
+  /** Everyone's Jira, connected from the office and relayed to their workers (see jira/links.ts). */
+  jira: JiraLinks;
   /** The office's own Claude plan limits. */
   limits: PlanLimitsReader;
   /** Each account's own, once it runs on a Claude sign-in of its own. */

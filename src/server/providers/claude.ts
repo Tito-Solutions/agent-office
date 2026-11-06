@@ -5,11 +5,12 @@ import path from 'node:path';
 import { FAILS_TO_DESPAIR, outputFailed, toolAction } from '../../shared/actions.js';
 import { MCP_READ_ONLY, writeClaudeMcpConfig } from '../office-workers.js';
 import { QUEUE_AGENT_DISALLOWED_TOOLS } from '../stations.js';
+import { claudeRemoteMcp } from './remote-mcp.js';
 import { answered, notified, wantsPermission } from '../workers/lifecycle.js';
 import { shq } from '../workers/process.js';
 import type { WorkerHandle } from '../workers/types.js';
 import { truncate } from '../workers/util.js';
-import type { ProviderAdapter } from './types.js';
+import type { ProviderAdapter, ProviderFloor } from './types.js';
 
 /**
  * A hook finding the office restarting (its workers keep running through that) retries, once a
@@ -26,6 +27,7 @@ interface ClaudeSetup {
   settings: string;
   /** Its --mcp-config: the office's MCP server. */
   mcp?: string;
+  remoteMcp?: ProviderFloor['remoteMcp'];
 }
 
 /** Claude Code's --settings for every worker: each hook event posted to the office, with curl or else the office's own node. */
@@ -194,15 +196,18 @@ export const claude: ProviderAdapter<undefined, ClaudeSetup> = {
   id: 'claude',
   scrubEnv: ['CLAUDECODE', 'CLAUDE_CODE_ENTRYPOINT', 'CLAUDE_CODE_SSE_PORT', 'CLAUDE_CODE_EXECPATH', 'CLAUDE_PID', 'CLAUDE_EFFORT'],
   scrubPrefixes: ['CLAUDE_CODE_SESSION', 'CLAUDE_CODE_CHILD', 'CLAUDE_CODE_MESSAGING'],
-  prepare: ({ dataDir, mcpScript }) => ({
+  prepare: ({ dataDir, mcpScript, remoteMcp }) => ({
     settings: writeHookSettings(dataDir),
     mcp: mcpScript ? writeClaudeMcpConfig(dataDir, mcpScript) : undefined,
+    remoteMcp,
   }),
   launch({ h: { info }, args, prompt, resumeSessionId, station, setup }) {
     args.unshift('--settings', setup.settings);
     // The office's MCP server: its workers, to list, hire, send home and tell (see office-workers.ts).
-    // Ahead of --settings, which ends the list --mcp-config takes.
-    if (setup.mcp) args.unshift('--mcp-config', setup.mcp);
+    // Ahead of --settings, which ends the list --mcp-config takes. With it, the remote MCP servers the
+    // office relays for this worker (Jira, once whoever hired it connected it).
+    const configs = [setup.mcp, claudeRemoteMcp(setup.remoteMcp?.(info.id) ?? [])].filter((c): c is string => !!c);
+    if (configs.length) args.unshift('--mcp-config', ...configs);
     // A model/effort chosen for this worker overrides whatever --agent-args set office-wide.
     if (info.model) args.push('--model', info.model);
     if (info.effort) args.push('--effort', info.effort);

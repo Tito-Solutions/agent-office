@@ -3,6 +3,7 @@ import type serialize from '@xterm/addon-serialize';
 import type { Run, WorkerInfo, WorkerStatus } from '../../shared/protocol.js';
 import type { DshSession } from '../dsh.js';
 import type { PromptSource } from '../prompts.js';
+import type { RemoteMcp } from '../providers/types.js';
 import type { Pty } from '../ptys.js';
 import type { UsageTracker } from '../usage.js';
 import type { Worktrees } from '../worktrees.js';
@@ -13,6 +14,8 @@ export type Worktree = NonNullable<WorkerInfo['worktree']>;
 export interface HookEnv {
   url: string;
   token: string;
+  /** The remote MCP servers the office relays for a worker hired by `owner` (none: the office) as it starts (see ProviderFloor.remoteMcp). */
+  mcp?(owner: string | undefined, workerId: string): RemoteMcp[];
 }
 
 /** Another floor's repository for a worker to work in too (see WorkerInfo.repos). */
