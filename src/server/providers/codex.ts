@@ -5,9 +5,10 @@ import path from 'node:path';
 import { codexHookArgs, codexModelArgs, normalizeCodexHook, writeCodexHook } from '../codex.js';
 import { CodexUsageReader } from '../codex-usage.js';
 import { codexMcpArgs } from '../office-workers.js';
+import { codexRemoteMcpArgs } from './remote-mcp.js';
 import { reduceLifecycle, type ToolTracker } from '../workers/lifecycle.js';
 import type { WorkerHandle } from '../workers/types.js';
-import type { ProviderAdapter } from './types.js';
+import type { ProviderAdapter, ProviderFloor } from './types.js';
 
 interface CodexState {
   usage: CodexUsageReader;
@@ -24,6 +25,7 @@ interface CodexState {
 interface CodexSetup {
   hook: string;
   mcpScript?: string;
+  remoteMcp?: ProviderFloor['remoteMcp'];
 }
 
 /** Where a Codex worker's sessions are logged, for reading its usage. */
@@ -90,11 +92,11 @@ export const codex: ProviderAdapter<CodexState, CodexSetup> = {
   id: 'codex',
   scrubEnv: ['CODEX_THREAD_ID', 'CODEX_INTERNAL_ORIGINATOR_OVERRIDE'],
   createState: () => ({ usage: new CodexUsageReader(), tools: new Map(), pending: new Set() }),
-  prepare: ({ dataDir, mcpScript }) => ({ hook: writeCodexHook(dataDir), mcpScript }),
+  prepare: ({ dataDir, mcpScript, remoteMcp }) => ({ hook: writeCodexHook(dataDir), mcpScript, remoteMcp }),
   launch({ h, args, prompt, resumeSessionId, setup }) {
     // Resumed too: Codex resumes on whatever its config says now, not on the model the session ran on.
     args = codexModelArgs(args, h.info.model, h.info.effort);
-    args.push(...codexHookArgs(setup.hook), ...(setup.mcpScript ? codexMcpArgs(setup.mcpScript) : []), '--no-alt-screen');
+    args.push(...codexHookArgs(setup.hook), ...(setup.mcpScript ? codexMcpArgs(setup.mcpScript) : []), ...codexRemoteMcpArgs(setup.remoteMcp?.(h.info.id) ?? []), '--no-alt-screen');
     if (resumeSessionId) args.push('resume', resumeSessionId);
     if (prompt) args.push('--', prompt);
     tracker(h.state).clear();

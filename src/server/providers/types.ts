@@ -13,6 +13,19 @@ export interface ProviderFloor {
   mcpScript?: string;
   /** The DSH profile a DeepSeek Harness worker boots (`--dsh-profile`). */
   dshProfile: string;
+  /** The remote MCP servers the office relays for a worker as it starts (Jira, once its hirer connected it). */
+  remoteMcp?(workerId: string): RemoteMcp[];
+}
+
+/**
+ * An MCP server the office relays for a worker over Streamable HTTP, on its loopback hook server (see
+ * jira/relay.ts). The worker's own hook token, AGENT_OFFICE_HOOK_TOKEN, is the bearer token.
+ */
+export interface RemoteMcp {
+  /** What the agent calls it: Claude Code's tools are mcp__<name>__<tool>. */
+  name: string;
+  /** The relay, with the worker's id in it. */
+  url: string;
 }
 
 /** One run of a worker, for its adapter to turn into a command line. */

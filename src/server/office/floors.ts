@@ -73,7 +73,7 @@ export async function openFloors(ctx: Ctx, hookPort: number): Promise<FloorsOpen
     agentCmd: cfg.agentCmd,
     agentArgs: cfg.agentArgs,
     dshProfile: cfg.dshProfile,
-    hook: { url: `http://127.0.0.1:${hookPort}`, token: '' },
+    hook: { url: `http://127.0.0.1:${hookPort}`, token: '', mcp: (owner, workerId) => ctx.jira.relays(owner ?? '', workerId, `http://127.0.0.1:${hookPort}`) },
     ledger: ctx.ledger,
     capacity: ctx.machine,
     prompts: ctx.prompts,

@@ -18,6 +18,7 @@ import { Maps } from '../maps.js';
 import { OfficePrompts } from '../prompts.js';
 import { PodsStore } from '../pods.js';
 import { LeaveOnMerge } from '../leave-on-merge.js';
+import { JiraLinks, jiraServer } from '../jira/links.js';
 import type { ServiceInfo, ServicesState } from '../../shared/protocol.js';
 import type { BuildingServices, Ctx, LateServices } from './context.js';
 import type { Client } from './client.js';
@@ -62,6 +63,11 @@ export function createServices(ctx: Ctx): BuildingServices {
       for (const c of clients.values()) if (c.accountId === id && !c.out) ctx.sendTo(c, { t: 'signins', state: signins.state(id) });
     },
   );
+  // Jira, connected once from ☰ → Jira: an account's own, or the office's on the shared password.
+  const jira = new JiraLinks(cfg.dataDir, jiraServer(), (owner) => {
+    for (const c of clients.values()) if ((c.accountId ?? '') === owner && !c.out) ctx.sendTo(c, { t: 'jira', state: jira.state(owner) });
+  });
+
   // Accounts revoked from the terminal while the office was closed leave their sign-ins behind.
   if (!accounts.unreadableFile) signins.prune(new Set(accounts.state(new Set()).accounts.map((a) => a.id)));
 
@@ -127,7 +133,7 @@ export function createServices(ctx: Ctx): BuildingServices {
     });
   };
 
-  return { sky, themes, maps, prompts, leaveOnMerge, pods, ledger, signins, limits, accountLimits, webhook, machine, limitsOf, pumpQueues };
+  return { sky, themes, maps, prompts, leaveOnMerge, pods, ledger, signins, jira, limits, accountLimits, webhook, machine, limitsOf, pumpQueues };
 }
 
 /** What's made once the floors are open: the SSH team, the tailnet, workers' web servers, pictures and upgrades. */

@@ -2,11 +2,12 @@
 // reports statuses and usage snapshots on /hooks/opencode.
 import { toolAction } from '../../shared/actions.js';
 import { openCodeMcp } from '../office-workers.js';
+import { openCodeRemoteMcp } from './remote-mcp.js';
 import { mergeOpenCodeConfigContent, openCodePluginSpecifier, writeOpenCodePlugin, type OpenCodeStatusEvent } from '../opencode.js';
 import { reportedUsage } from '../reported-usage.js';
 import type { WorkerHandle } from '../workers/types.js';
 import { truncate } from '../workers/util.js';
-import type { ProviderAdapter } from './types.js';
+import type { ProviderAdapter, ProviderFloor } from './types.js';
 
 /** What a worker that reports statuses (OpenCode's plugin, Pi's extension) keeps of them. */
 export interface StatusState {
@@ -25,6 +26,7 @@ export interface StatusOptions {
 interface OpenCodeSetup {
   plugin: string;
   mcpScript?: string;
+  remoteMcp?: ProviderFloor['remoteMcp'];
 }
 
 function withoutOpenCodeModel(args: string[]): string[] {
@@ -111,7 +113,7 @@ export function reduceStatus(h: WorkerHandle<StatusState>, payload: OpenCodeStat
 export const opencode: ProviderAdapter<StatusState, OpenCodeSetup> = {
   id: 'opencode',
   createState: () => ({}),
-  prepare: ({ dataDir, mcpScript }) => ({ plugin: writeOpenCodePlugin(dataDir), mcpScript }),
+  prepare: ({ dataDir, mcpScript, remoteMcp }) => ({ plugin: writeOpenCodePlugin(dataDir), mcpScript, remoteMcp }),
   launch({ h, args, prompt, resumeSessionId, setup }) {
     const { info } = h;
     if (resumeSessionId || info.model) args = withoutOpenCodeModel(args);
@@ -128,7 +130,9 @@ export const opencode: ProviderAdapter<StatusState, OpenCodeSetup> = {
         // (see ../opencode.ts). Like its model, it's for a fresh session: a resumed one carries on with its own.
         env.AGENT_OFFICE_EFFORT = (!resumeSessionId && info.effort) || '';
         env.AGENT_OFFICE_MODEL = (!resumeSessionId && info.model) || '';
-        env.OPENCODE_CONFIG_CONTENT = mergeOpenCodeConfigContent(env.OPENCODE_CONFIG_CONTENT, openCodePluginSpecifier(setup.plugin), setup.mcpScript ? openCodeMcp(setup.mcpScript) : undefined);
+        const remote = openCodeRemoteMcp(setup.remoteMcp?.(info.id) ?? [], env);
+        const mcp = setup.mcpScript || Object.keys(remote).length ? { ...(setup.mcpScript ? openCodeMcp(setup.mcpScript) : {}), ...remote } : undefined;
+        env.OPENCODE_CONFIG_CONTENT = mergeOpenCodeConfigContent(env.OPENCODE_CONFIG_CONTENT, openCodePluginSpecifier(setup.plugin), mcp);
       },
     };
   },
