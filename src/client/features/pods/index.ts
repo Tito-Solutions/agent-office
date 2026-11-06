@@ -18,7 +18,7 @@ declare module '../../world/types' {
 }
 
 function card(pod: Pod): PodCard {
-  return { name: pod.name, color: pod.color, limit: pod.limit, people: podPeople(pod), ...podWork(pod) };
+  return { name: pod.name, color: pod.color, people: podPeople(pod), ...podWork(pod) };
 }
 
 export function installPods(ctx: Ctx) {

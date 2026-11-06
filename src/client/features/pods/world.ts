@@ -13,7 +13,6 @@ import type { Fixture } from '../../world/office/fixture';
 export interface PodCard {
   name: string;
   color: string;
-  limit: number;
   /** "PA Rhona · Dev JP". */
   people: string;
   stages: Record<Stage, number>;
@@ -127,7 +126,6 @@ export function drawPodBoard(cards: readonly PodCard[], floorName: string | unde
       g.fillText(fit(g, text, cw - 40), x + 20, ly);
       ly += (size + 18) * s;
     };
-    line(`Limit ${card.limit} active feature${card.limit === 1 ? '' : 's'}`, INK, 900, 32);
     line(card.people || 'No members yet', card.people ? INK : MUTED, 700, 28);
     line(STAGES.map((st) => `${STAGE_SHORT[st]} ${card.stages[st]}`).join(' · '), MUTED, 700, 24);
     line(`🔀 ${card.prs} PR${card.prs === 1 ? '' : 's'}${card.inReview ? ` · ${card.inReview} in review` : ''}`, INK, 700, 28);
