@@ -24,7 +24,7 @@ test('the office starts with the pods named on GitHub, a color each and a limit 
   );
   assert.deepEqual(
     pods.map((p) => p.color),
-    SIGN_COLORS.map((c) => c.color),
+    SIGN_COLORS.slice(0, pods.length).map((c) => c.color),
   );
   assert.ok(pods.every((p) => p.limit === 2));
   assert.equal(new Set(pods.map((p) => p.id)).size, pods.length);

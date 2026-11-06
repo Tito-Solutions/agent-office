@@ -53,8 +53,8 @@ export const DEFAULT_LIMIT = 2;
 export const STAGES = ['prepare', 'plan', 'build', 'release'] as const;
 export type Stage = (typeof STAGES)[number];
 
-/** The pods the office starts with: the pod labels on GitHub, one color each. */
-export const DEFAULT_POD_NAMES = ['Pod Thai', 'Pairadox.AI', 'Pod Trip', 'SalonPods', 'Pod Influence', 'Tri Pod', 'Spod Bros'];
+/** The pods the office starts with: the Tax Maverick pods' labels on GitHub, one color each. */
+export const DEFAULT_POD_NAMES = ['Pod Thai', 'Pairadox.AI', 'Pod Trip', 'SalonPods', 'Pod Influence', 'Tri Pod'];
 
 export function defaultPods(): PodsState {
   return {
