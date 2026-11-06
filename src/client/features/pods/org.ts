@@ -55,7 +55,7 @@ export function renderOrg(state: PodsState): HTMLElement {
             'div.org-pod',
             { style: `--pod:${p.color}` },
             h('div.org-pod-name', {}, p.name),
-            h('div.org-note', {}, [p.account, p.members.map((m) => `${m.name} (${m.role})`).join(', ') || 'No members yet'].filter(Boolean).join(' · ')),
+            h('div.org-note', {}, p.members.map((m) => `${m.name} (${m.role})`).join(', ') || 'No members yet'),
           ),
         ),
       ),

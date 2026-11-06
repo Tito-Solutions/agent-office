@@ -1,14 +1,11 @@
-// The Roster tab of the Pods window, for admins: each pod's name, color, account, limit, PM, SAs,
-// floors and members, and the people over every pod. Edits stay a draft until Save; each pod keeps
-// its features (the office never takes them from a save).
+// The Roster tab of the Pods window, for admins: each pod's name, color, limit, PM, SAs and members,
+// and the people over every pod. Edits stay a draft until Save.
 import { SIGN_COLORS } from '../../../shared/floorplan';
 import { DEFAULT_LIMIT, MAX_MEMBERS, MAX_PODS, PERSON_MAX, POD_NAME_MAX, POD_ROLES, type Pod, type PodRole, type PodsState } from '../../../shared/pods';
 import { h, toast } from '../../ui/dom';
 
 export interface RosterDeps {
   save(state: PodsState): void;
-  /** The building's floors, for which ones each pod works on. */
-  floors: { id: string; name: string }[];
 }
 
 const text = (value: string, max: number, placeholder: string, set: (v: string) => void) =>
@@ -22,7 +19,7 @@ export function renderRoster(state: PodsState, deps: RosterDeps): HTMLElement {
 
   const draw = () => {
     root.replaceChildren(
-      h('p.note', {}, 'Names are matched to people’s accounts, so spell them the way each person signs in. Members and the PM can add and sign off their pod’s features.'),
+      h('p.note', {}, 'Spell each pod’s name as its GitHub label: that’s how its issues and pull requests are found.'),
       h(
         'section.roster-org',
         {},
@@ -45,7 +42,7 @@ export function renderRoster(state: PodsState, deps: RosterDeps): HTMLElement {
               {
                 type: 'button',
                 onclick: () => {
-                  draft.pods.push({ id: '', name: `Pod ${draft.pods.length + 1}`, color: SIGN_COLORS[draft.pods.length % SIGN_COLORS.length].color, account: '', floors: [], members: [], sas: [], limit: DEFAULT_LIMIT, features: [] });
+                  draft.pods.push({ id: '', name: `Pod ${draft.pods.length + 1}`, color: SIGN_COLORS[draft.pods.length % SIGN_COLORS.length].color, members: [], sas: [], limit: DEFAULT_LIMIT });
                   draw();
                 },
               },
@@ -108,15 +105,6 @@ export function renderRoster(state: PodsState, deps: RosterDeps): HTMLElement {
       ),
       pod.members.length < MAX_MEMBERS ? h('button.btn', { type: 'button', onclick: () => (pod.members.push({ name: '', role: pod.members.some((m) => m.role === 'PA') ? 'Developer' : 'PA' }), draw()) }, '＋ Member') : null,
     );
-    const floors = h(
-      'div.roster-floors',
-      {},
-      ...deps.floors.map((f) => {
-        const box = h('input', { type: 'checkbox', onchange: (e: Event) => (pod.floors = (e.target as HTMLInputElement).checked ? [...pod.floors, f.id] : pod.floors.filter((x) => x !== f.id)) }) as HTMLInputElement;
-        box.checked = pod.floors.includes(f.id);
-        return h('label.pod-desk', {}, box, ` ${f.name}`);
-      }),
-    );
     return h(
       'section.roster-pod',
       { style: `--pod:${pod.color}` },
@@ -131,7 +119,6 @@ export function renderRoster(state: PodsState, deps: RosterDeps): HTMLElement {
             type: 'button',
             title: 'Take this pod off the roster',
             onclick: () => {
-              if (pod.features.length && !confirm(`${pod.name || 'This pod'} has ${pod.features.length} active feature(s). Take it off the roster anyway?`)) return;
               draft.pods.splice(index, 1);
               draw();
             },
@@ -139,16 +126,14 @@ export function renderRoster(state: PodsState, deps: RosterDeps): HTMLElement {
           'Remove',
         ),
       ),
-      h('div.pod-row', {}, field('Color (its desk signs too)', swatches), field('Feature limit', limit)),
+      h('div.pod-row', {}, field('Color', swatches), field('Feature limit', limit)),
       h(
         'div.pod-row',
         {},
-        field('Account', text(pod.account, 80, 'Tax Maverick', (v) => (pod.account = v))),
         field('PM', text(pod.pm ?? '', PERSON_MAX, 'Jhem', (v) => (pod.pm = v))),
         field('SAs (comma between)', text(pod.sas.join(', '), 120, 'Zer, Jose', (v) => (pod.sas = v.split(',').map((s) => s.trim()).filter(Boolean)))),
       ),
       field('Members', members),
-      deps.floors.length ? field('Works on (none ticked: shows on every floor)', floors) : null,
     );
   }
 

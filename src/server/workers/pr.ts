@@ -52,8 +52,8 @@ async function createPr(branch: string, base: string | undefined, title: string,
 }
 
 /**
- * Labels a pull request opened from a pod's desk with the pod (see pod-desks.ts). Best effort, after
- * it's open: a repository without that label keeps the pull request, just unlabelled.
+ * Labels a pull request with the pod of the issue it closes, so it counts on that pod's card on the
+ * Pod board. Best effort, after it's open: a repository without that label keeps the pull request, just unlabelled.
  */
 async function labelPr(pr: { number: number }, label: string | undefined, cwd: string, as?: GhAs): Promise<void> {
   if (!label) return;
@@ -91,7 +91,7 @@ export function withRelated(body: string, block: string): string {
  * `other`, it's for one of the other repositories of a worker across repositories: the issue is its
  * own floor's (`home`), so this one only mentions it.
  */
-function draftPr(info: WorkerInfo, commits: string[], by: string, aiUse: string, other?: { home?: string }): { title: string; body: string } {
+function draftPr(info: WorkerInfo, commits: string[], by: string, aiUse: string, other?: { home?: string }): { title: string; body: string; closes?: number } {
   const task = (info.prompt ?? '').replace(/\r\n?/g, '\n').trim();
   const firstLine = task.split('\n').map((l) => l.trim()).find(Boolean) ?? '';
   // The issues board hands work over as: Work on GitHub issue #12: "Title".
@@ -105,7 +105,7 @@ function draftPr(info: WorkerInfo, commits: string[], by: string, aiUse: string,
   else if (closes && other?.home) parts.push(`Part of ${other.home}#${closes}`);
   if (aiUse) parts.push(aiUse);
   parts.push(`_Opened from Agent Office by ${by} · ${info.name} at ${DESK_BY_ID.get(info.deskId)?.label ?? info.deskId}_`);
-  return { title, body: parts.join('\n\n') };
+  return { title, body: parts.join('\n\n'), ...(closes && !other ? { closes: Number(closes) } : {}) };
 }
 
 /** Opening pull requests for one floor's workers (see WorkerContext). */
@@ -205,9 +205,9 @@ export class WorkerPrs {
       }
       await run('git', ['push', '-u', 'origin', branch], cwd, 90_000, as?.env);
       const base = await this.pushedBranch([wt.from, this.ctx.trees.currentBranch()], branch);
-      const { title, body } = draftPr(info, commits, by, aiUseBlock(info, this.ctx.prompts));
+      const { title, body, closes } = draftPr(info, commits, by, aiUseBlock(info, this.ctx.prompts));
       const { number, url } = await createPr(branch, base, title, body, cwd, as);
-      await labelPr({ number }, this.ctx.events.deskPod?.(info.deskId), cwd, as);
+      if (closes) await labelPr({ number }, this.ctx.events.issuePod?.(closes), cwd, as);
       info.pr = { number, url };
       this.ctx.persist();
       return { prs: [{ number, url, existed: false, dirty }], failed: [] };
@@ -259,9 +259,9 @@ export class WorkerPrs {
           }
           await run('git', ['push', '-u', 'origin', p.branch], cwd, 90_000, as?.env);
           const base = await this.pushedBranch([p.from, new Worktrees(p.dir).currentBranch()], p.branch, p.dir);
-          const { title, body } = draftPr(info, commits, by, aiUseBlock(info, this.ctx.prompts), p.own ? undefined : { home });
+          const { title, body, closes } = draftPr(info, commits, by, aiUseBlock(info, this.ctx.prompts), p.own ? undefined : { home });
           const pr = await createPr(p.branch, base, title, body, cwd, as);
-          await labelPr(pr, this.ctx.events.deskPod?.(info.deskId), cwd, as);
+          if (closes) await labelPr(pr, this.ctx.events.issuePod?.(closes), cwd, as);
           p.set(pr);
           this.ctx.persist();
           prs.push({ repo: p.name, ...pr, existed: false, dirty, cwd });
